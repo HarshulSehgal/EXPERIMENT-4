@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Card Collection</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      text-align: center;
+    }
+
+    form {
+      background: white;
+      padding: 20px;
+      margin: 20px auto;
+      width: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px gray;
+    }
+
+    input, button {
+      margin: 5px;
+      padding: 8px;
+      width: 90%;
+    }
+
+    table {
+      margin: auto;
+      background: white;
+      border-collapse: collapse;
+      width: 80%;
+    }
+
+    th, td {
+      border: 1px solid black;
+      padding: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      color: white;
+    }
+
+    .add { background: teal; }
+    .delete { background: red; }
+    .edit { background: orange; }
+  </style>
+</head>
+
+<body>
+
+<h1>Card Collection</h1>
+
+<form id="cardForm">
+  <input type="hidden" id="cardId">
+  <input type="text" id="suit" placeholder="Suit" required>
+  <input type="text" id="value" placeholder="Value" required>
+  <input type="text" id="collection" placeholder="Collection" required>
+  <button class="add">Save Card</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Suit</th>
+      <th>Value</th>
+      <th>Collection</th>
+      <th>Edit</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody id="cardTable"></tbody>
+</table>
+
+<script>
+const API = "http://localhost:3000/api/cards";
+
+async function loadCards() {
+  const res = await fetch(API);
+  const data = await res.json();
+
+  const table = document.getElementById("cardTable");
+  table.innerHTML = "";
+
+  data.forEach(card => {
+    table.innerHTML += `
+      <tr>
+        <td>${card.suit}</td>
+        <td>${card.value}</td>
+        <td>${card.collection}</td>
+        <td>
+          <button class="edit"
+            onclick="editCard('${card.id}','${card.suit}','${card.value}','${card.collection}')">
+            Edit
+          </button>
+        </td>
+        <td>
+          <button class="delete" onclick="deleteCard('${card.id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function editCard(id, suit, value, collection) {
+  document.getElementById("cardId").value = id;
+  document.getElementById("suit").value = suit;
+  document.getElementById("value").value = value;
+  document.getElementById("collection").value = collection;
+}
+
+document.getElementById("cardForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const id = document.getElementById("cardId").value;
+  const suit = document.getElementById("suit").value;
+  const value = document.getElementById("value").value;
+  const collection = document.getElementById("collection").value;
+
+  if (id) {
+    await fetch(API + "/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suit, value, collection })
+    });
+  } else {
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suit, value, collection })
+    });
+  }
+
+  e.target.reset();
+  document.getElementById("cardId").value = "";
+  loadCards();
+});
+
+async function deleteCard(id) {
+  await fetch(API + "/" + id, { method: "DELETE" });
+  loadCards();
+}
+
+loadCards();
+</script>
+
+</body>
+</html>
